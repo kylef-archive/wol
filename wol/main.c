@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <netinet/in.h>
+
 typedef struct mac_struct {
     char octet_one;
     char octet_two;
@@ -35,9 +37,34 @@ int mac_from_str(mac_t *mac, char *string) {
 
 /*
   Wake up this mac address.
+  
+  Returns 1 on sucsess or <0 on failure.
 */
-void mac_wake(mac_t *address) {
+int mac_wake(mac_t *address) {
+    int sock = socket(PF_INET, SOCK_DGRAM, 0);
+    struct sockaddr_in addr;
+    int broadcast = 1;
     
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(9);
+    
+    if (sock == -1) {
+        return -1;
+    }
+    
+    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(int)) == -1) {
+        return -2;
+    }
+    
+    if (!inet_aton("255.255.255.255", &addr.sin_addr)) {
+        return -3;
+    }
+    
+    if (sendto(sock, "test", 4, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) != 4) {
+        return -4;
+    }
+    
+    return 1;
 }
 
 /*
@@ -73,7 +100,12 @@ int main(int argc, const char *argv[]) {
         return 2;
     }
     
-    mac_wake(mac);
+    if (mac_wake(mac) != 1) {
+        printf("A strange networking error occured.\n");
+        mac_dealloc(mac);
+        return 3;
+    }
+    
     mac_dealloc(mac);
     
     return 0;
