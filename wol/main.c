@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 typedef struct mac_struct {
     char *packet;
