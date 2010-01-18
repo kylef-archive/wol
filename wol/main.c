@@ -1,16 +1,20 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <netinet/in.h>
 
 typedef struct mac_struct {
-    char octet_one;
-    char octet_two;
-    char octet_three;
+    char *packet;
+    int packet_length;
     
-    char octet_four;
-    char octet_five;
-    char octete_six;
+    int octet_one;
+    int octet_two;
+    int octet_three;
+    
+    int octet_four;
+    int octet_five;
+    int octet_six;
 } mac_t;
 
 /*
@@ -23,16 +27,55 @@ mac_t *mac_alloc(void) {
 }
 
 /*
+  Generates a wake on lan packet
+  
+  Returns 1 on sucsess or 0 on failure.
+*/
+int mac_build_packet(mac_t *mac) {
+    int i;
+    mac->packet_length = 6*17;
+    mac->packet = malloc(mac->packet_length);
+    
+    if (mac->packet == NULL) {
+        return 0;
+    }
+    
+    /* Set the first 6 bytes of the packet to FF:FF:FF:FF:FF:FF */
+    for (i = 0; i < 6; i++) {
+        mac->packet[i] = 255;
+    }
+    
+    /* The next part is the mac address 16 times. */
+    for (i = 1; i < 17; i++) {
+        mac->packet[i*6] = mac->octet_one;
+        mac->packet[i*6 + 1] = mac->octet_two;
+        mac->packet[i*6 + 2] = mac->octet_three;
+        mac->packet[i*6 + 3] = mac->octet_four;
+        mac->packet[i*6 + 4] = mac->octet_five;
+        mac->packet[i*6 + 5] = mac->octet_six;
+    }
+    
+    return 1;
+}
+
+void *mac_free_packet(char *packet) {
+    free(packet);
+}
+
+/*
   Convert a string to a mac_t, this can be a string seperate with : or -.
   
   Examples:
-    mac_from_str("01-23-45-67-89-ab");
     mac_from_str("01:23:45:67:89:ab");
   
   Returns 1 on sucsess or 0 on failure.
 */
 int mac_from_str(mac_t *mac, char *string) {
-    return 0;
+    if (sscanf(string, "%x:%x:%x:%x:%x:%x", &mac->octet_one, &mac->octet_two, &mac->octet_three, &mac->octet_four, &mac->octet_five, &mac->octet_six) != 6) {
+        return 0;
+    }
+    
+    return mac_build_packet(mac);
 }
 
 /*
@@ -40,7 +83,7 @@ int mac_from_str(mac_t *mac, char *string) {
   
   Returns 1 on sucsess or <0 on failure.
 */
-int mac_wake(mac_t *address) {
+int mac_wake(mac_t *mac) {
     int sock = socket(PF_INET, SOCK_DGRAM, 0);
     struct sockaddr_in addr;
     int broadcast = 1;
@@ -60,7 +103,7 @@ int mac_wake(mac_t *address) {
         return -3;
     }
     
-    if (sendto(sock, "test", 4, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) != 4) {
+    if (sendto(sock, mac->packet, mac->packet_length, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) != mac->packet_length) {
         return -4;
     }
     
@@ -71,6 +114,10 @@ int mac_wake(mac_t *address) {
   Release the mac address.
 */
 void mac_dealloc(mac_t *mac) {
+    if (mac->packet != NULL) {
+        free(mac->packet);
+    }
+    
     free(mac);
 }
 
@@ -78,7 +125,6 @@ int main(int argc, const char *argv[]) {
     if (argc == 1) {
         printf("Usage: %s <mac_address>\n", argv[0]);
         printf("Mac address should be in either of the following formats:\n");
-        printf("  01-23-45-67-89-ab\n");
         printf("  01:23:45:67:89:ab\n");
         
         return 0;
@@ -93,7 +139,6 @@ int main(int argc, const char *argv[]) {
     
     if (mac_from_str(mac, (char *)argv[1]) == 0) {
         printf("Incorrect mac address, was this in either of the following formats:\n");
-        printf("  01-23-45-67-89-ab\n");
         printf("  01:23:45:67:89:ab\n");
         
         mac_dealloc(mac);
