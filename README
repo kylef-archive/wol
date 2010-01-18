@@ -1,0 +1,17 @@
+Wake On Lan
+===========
+
+A small application to wake systems up from the lan. This is a small light weight C application that will run on most unix's, tested on: Mac OS X, OpenSolaris, Linux.
+
+Installation
+------------
+
+- make
+- install bin/wol /usr/local/bin
+
+Usage
+-----
+
+Usage: wol <mac_address>
+
+The mac address must be separated with colons (:). Such as 01:23:45:67:89:AB.
