@@ -14,7 +14,7 @@ mac_t *mac_alloc(void) {
 }
 
 int mac_build_packet(mac_t *mac) {
-    int i;
+    unsigned int i;
     mac->packet_length = 6*17;
     mac->packet = malloc((size_t)mac->packet_length);
     
