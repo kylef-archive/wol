@@ -10,13 +10,13 @@
 #include "wol.h"
 
 mac_t *mac_alloc(void) {
-    return malloc(sizeof(mac_t));
+    return (mac_t*)malloc(sizeof(mac_t));
 }
 
 int mac_build_packet(mac_t *mac) {
     int i;
     mac->packet_length = 6*17;
-    mac->packet = malloc(mac->packet_length);
+    mac->packet = malloc((size_t)mac->packet_length);
     
     if (mac->packet == NULL) {
         return 0;
@@ -44,7 +44,7 @@ void *mac_free_packet(char *packet) {
     free(packet);
 }
 
-int mac_from_str(mac_t *mac, char *string) {
+int mac_from_str(mac_t *mac, const char *string) {
     if (sscanf(string, "%x:%x:%x:%x:%x:%x", &mac->octet_one, &mac->octet_two, &mac->octet_three, &mac->octet_four, &mac->octet_five, &mac->octet_six) != 6) {
         return 0;
     }

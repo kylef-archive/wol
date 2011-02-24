@@ -35,7 +35,7 @@ void *mac_free_packet(char *packet);
   
   Returns 1 on sucsess or 0 on failure.
 */
-int mac_from_str(mac_t *mac, char *string);
+int mac_from_str(mac_t *mac, const char *string);
 
 /*
   Wake up this mac address.
